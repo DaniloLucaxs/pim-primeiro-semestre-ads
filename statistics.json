@@ -1,0 +1,36 @@
+{
+    "angela": {
+        "cyber_quiz": {
+            "total_time": 5.080343961715698,
+            "attempts": 1,
+            "correct_answers": 3,
+            "average_time": 5.080343961715698
+        }
+    },
+    "Danii": {
+        "logic_quiz": {
+            "total_time": 4.368659496307373,
+            "attempts": 1,
+            "correct_answers": 0,
+            "average_time": 4.368659496307373
+        },
+        "digital_security_quiz": {
+            "total_time": 2.239886522293091,
+            "attempts": 1,
+            "correct_answers": 1,
+            "average_time": 2.239886522293091
+        },
+        "python_programming_quiz": {
+            "total_time": 2.416196346282959,
+            "attempts": 1,
+            "correct_answers": 1,
+            "average_time": 2.416196346282959
+        },
+        "cyber_quiz": {
+            "total_time": 2.703699827194214,
+            "attempts": 1,
+            "correct_answers": 3,
+            "average_time": 2.703699827194214
+        }
+    }
+}

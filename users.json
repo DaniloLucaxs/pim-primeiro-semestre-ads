@@ -1,0 +1,18 @@
+{
+    "users": [
+        {
+            "username": "angela",
+            "password": "$2b$12$Q0P86SkGjV2enZQTKfDXdevplDpIomNTS4KRAqf45Vl/9n5htUpfy",
+            "age": 44,
+            "location": "Paraiba",
+            "role": "user"
+        },
+        {
+            "username": "Danii",
+            "password": "$2b$12$6U0LR0A8X9wmxVCIu36KFuAs86wkqQzdpjGi3p8GMfmgw5Dm5YuGC",
+            "age": 18,
+            "location": "SP",
+            "role": "admin"
+        }
+    ]
+}
