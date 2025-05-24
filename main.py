@@ -1,12 +1,14 @@
 import time # Importa o módulo time para medir o tempo de execução
 import json # Importa o módulo json para manipulação de arquivos JSON
 import re # Importa o módulo re para expressões regulares
+
 from bcrypt import hashpw, checkpw, gensalt # Importa funções do bcrypt para hashing de senhas
+
 from statistics import mean, median, mode, StatisticsError # Importa funções estatísticas
 from pathlib import Path # Importa Path para manipulação de caminhos de arquivos
 
 # Diretórios e arquivos JSON
-BASE_DIR = Path("c:/Users/Danilo/Desktop/pim-funcional/plataforma-digital/fonte-src/data")
+BASE_DIR = Path(__file__).resolve().parent / "data"
 USER_DATA_FILE = BASE_DIR / "users.json"
 STATS_FILE = BASE_DIR / "statistics.json"
 LOCATIONS_FILE = BASE_DIR / "locations.json"
