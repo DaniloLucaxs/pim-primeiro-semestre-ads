@@ -12,6 +12,7 @@ BASE_DIR = Path(__file__).resolve().parent / "data"
 USER_DATA_FILE = BASE_DIR / "users.json"
 STATS_FILE = BASE_DIR / "statistics.json"
 LOCATIONS_FILE = BASE_DIR / "locations.json"
+BASE_DIR.mkdir(parents=True, exist_ok=True)
 
 def print_banner(text):
     """Imprime um banner centralizado no console."""
