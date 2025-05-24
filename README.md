@@ -1,55 +1,54 @@
-# Digital Platform Project
+# União Digital
 
-## Overview
-This digital platform is designed to provide users with a seamless experience for engaging with quizzes across various topics, including programming and cybersecurity. The platform includes user authentication, quiz selection, statistics tracking, and content management features.
+Este projeto é uma plataforma educacional interativa focada em cursos e quizzes sobre Pensamento Lógico Computacional, Segurança Digital, Programação em Python e Fundamentos de Cibersegurança.
 
-## Directory Structure
+## Estrutura do Projeto
+
 ```
-digital-platform
-├── src
-│   ├── main.py                # Entry point of the application
-│   ├── modules
-│   │   ├── welcome.py         # Module for displaying welcome messages
-│   │   ├── user_auth
-│   │   │   ├── login.py       # User login functionality
-│   │   │   └── password.py    # Password reset functionality
-│   │   ├── quiz_selection
-│   │   │   ├── logic.py       # Quiz logic management
-│   │   │   ├── security.py     # Security features for quiz selection
-│   │   │   ├── progpy.py      # Functions for programming quizzes
-│   │   │   └── cyber.py       # Functions for cybersecurity quizzes
-│   │   ├── statistics
-│   │   │   ├── correct_answers.py  # Tracks correct answers
-│   │   │   └── average_usage_time.py # Tracks average usage time
-│   │   └── content_insertion.py # Module for inserting quiz content
-│   ├── data
-│   │   ├── quizzes            # Directory for quiz content files
-│   │   ├── user_data
-│   │   │   └── users.json     # JSON file for storing user data
-│   │   └── usage_statistics
-│   │       ├── time.json      # JSON file for usage time statistics
-│   │       └── age.json       # JSON file for age-related statistics
-├── requirements.txt           # Lists project dependencies
-└── README.md                  # Project documentation
-```
+main.py
+README.md
+├───plataforma-digital
+│   └───fonte-src
+│       └───data
+│           ├── locations.json
+│           ├── statistics.json
+│           └── users.json
 
-## Setup Instructions
-1. Clone the repository to your local machine.
-2. Navigate to the project directory.
-3. Install the required dependencies using the command:
+## Funcionalidades
+
+- **Cadastro e Login de Usuários:** Com validação de senha forte e armazenamento seguro utilizando bcrypt.
+- **Quizzes Interativos:** Sobre lógica computacional, segurança digital, Python e cibersegurança.
+- **Estatísticas:** Geração de estatísticas de desempenho dos quizzes e dados dos usuários (idade, localização).
+- **Perfis de Usuário:** Diferenciação entre usuários comuns e administradores, com menus e permissões distintas.
+- **Políticas de Privacidade e Segurança:** Exibição das políticas ao usuário após o login.
+
+## Como Executar
+
+1. Certifique-se de ter o Python 3 instalado.
+2. Instale as dependências necessárias:
+   ```sh
+   pip install bcrypt
    ```
-   pip install -r requirements.txt
-   ```
-4. Run the application by executing:
-   ```
-   python src/main.py
+3. Execute o arquivo principal:
+   ```sh
+   python main.py
    ```
 
-## Features
-- **User Authentication**: Secure login and password reset functionalities.
-- **Quiz Selection**: Users can choose from a variety of quizzes based on their interests.
-- **Statistics Tracking**: The platform tracks user performance and engagement metrics.
-- **Dynamic Content Insertion**: Admins can add new quizzes easily through the content insertion module.
+## Sobre os Arquivos de Dados
 
-## Contributing
-Contributions are welcome! Please submit a pull request or open an issue for any suggestions or improvements.
+- `users.json`: Armazena os dados dos usuários cadastrados.
+- `statistics.json`: Guarda as estatísticas de desempenho nos quizzes.
+- `locations.json`: Mantém o levantamento das localidades dos usuários.
+
+## Observações
+
+- Os dados são armazenados localmente em arquivos JSON.
+- Senhas são protegidas por hashing (bcrypt).
+- Administradores têm acesso a estatísticas avançadas.
+
+## Licença
+
+Este projeto é de uso acadêmico e educacional.
+
+---
+Desenvolvido por  Danilo e União Digital.
