@@ -1,3 +1,4 @@
+import os  # Adicionado para limpeza de tela e centralização
 import time # Importa o módulo time para medir o tempo de execução
 import json # Importa o módulo json para manipulação de arquivos JSON
 import re # Importa o módulo re para expressões regulares
@@ -7,6 +8,9 @@ from bcrypt import hashpw, checkpw, gensalt # Importa funções do bcrypt para h
 from statistics import mean, median, mode, StatisticsError # Importa funções estatísticas
 from pathlib import Path # Importa Path para manipulação de caminhos de arquivos
 
+# Senha secreta para cadastro de administradores
+ADMIN_SECRET = "02plataforma!"  # Altere para a senha desejada
+
 # Diretórios e arquivos JSON
 BASE_DIR = Path(__file__).resolve().parent / "data"
 USER_DATA_FILE = BASE_DIR / "users.json"
@@ -14,11 +18,32 @@ STATS_FILE = BASE_DIR / "statistics.json"
 LOCATIONS_FILE = BASE_DIR / "locations.json"
 BASE_DIR.mkdir(parents=True, exist_ok=True)
 
+def clear_screen():
+    """Limpa a tela do console."""
+    os.system('cls' if os.name == 'nt' else 'clear')
+
 def print_banner(text):
-    """Imprime um banner centralizado no console."""
-    print("\n" + "=" * 50)
-    print(text.center(50))
-    print("=" * 50)
+    """Imprime um banner centralizado no console (horizontal e vertical)."""
+    clear_screen()
+    try:
+        size = os.get_terminal_size()
+        columns = size.columns
+        lines = size.lines
+    except OSError:
+        columns = 80
+        lines = 24
+
+    banner_lines = [
+        "",
+        "=" * 50,
+        text.center(50),
+        "=" * 50
+    ]
+    total_banner_lines = len(banner_lines)
+    empty_lines = max((lines - total_banner_lines) // 2, 0)
+    print("\n" * empty_lines)
+    for line in banner_lines:
+        print(line.center(columns))
 
 def ensure_directory_exists(file_path):
     """Garante que o diretório do arquivo exista."""
@@ -26,6 +51,7 @@ def ensure_directory_exists(file_path):
 
 def load_json(file_path, default_data):
     """Carrega dados de um arquivo JSON ou cria com dados padrão."""
+    print(f"[DEBUG] Carregando: {file_path}")  # Debug para ver onde está lendo
     ensure_directory_exists(file_path)
     if not file_path.exists():
         with file_path.open('w') as file:
@@ -38,6 +64,7 @@ def load_json(file_path, default_data):
 
 def save_json(file_path, data):
     """Salva dados em um arquivo JSON."""
+    print(f"[DEBUG] Salvando: {file_path}")  # Debug para ver onde está salvando
     with file_path.open('w') as file:
         json.dump(data, file, indent=4)
 
@@ -84,7 +111,13 @@ def show_policies():
    - Administradores têm acesso a estatísticas gerais, mas não a dados pessoais.
    - O uso indevido do sistema pode resultar em suspensão da conta.
 """
-    print(policies)
+    # Centraliza o texto das políticas horizontalmente
+    try:
+        columns = os.get_terminal_size().columns
+    except OSError:
+        columns = 80
+    for line in policies.strip().split('\n'):
+        print(line.center(columns))
     input("\nPressione Enter para continuar.")
 
 def register():
@@ -113,7 +146,15 @@ def register():
     while True:
         role = input("Você é um administrador? (sim/não): ").strip().lower()
         if role in ["sim", "não"]:
-            role = "admin" if role == "sim" else "user"
+            if role == "sim":
+                admin_pass = input("Digite a senha secreta de administrador: ")
+                if admin_pass == ADMIN_SECRET:
+                    role = "admin"
+                else:
+                    print("❌ Senha de administrador incorreta! Registrando como usuário comum.")
+                    role = "user"
+            else:
+                role = "user"
             break
         print("❌ Opção inválida! Digite 'sim' ou 'não'.")
 
@@ -140,6 +181,35 @@ def register():
 
     print(f"✅ Usuário {username} registrado com sucesso!\n")
 
+def reset_password():
+    """Permite ao usuário redefinir a senha caso esqueça."""
+    print_banner("Recuperação de Senha")
+    username = input("Digite seu nome de usuário: ")
+    users_data = load_json(USER_DATA_FILE, {"users": []})
+    for user in users_data["users"]:
+        if user["username"] == username:
+            # Pergunta a localização e idade como verificação simples
+            location = input("Digite sua cidade/estado cadastrada: ")
+            try:
+                age = int(input("Digite sua idade cadastrada: "))
+            except ValueError:
+                print("❌ Idade inválida.")
+                return
+            if user["location"] == location and user["age"] == age:
+                while True:
+                    new_password = input("Digite a nova senha: ")
+                    if is_valid_password(new_password):
+                        user["password"] = hashpw(new_password.encode('utf-8'), gensalt()).decode('utf-8')
+                        save_json(USER_DATA_FILE, users_data)
+                        print("✅ Senha redefinida com sucesso!\n")
+                        return
+                    else:
+                        print("❌ A senha não atende aos requisitos de segurança. Tente novamente.")
+            else:
+                print("❌ Dados de verificação incorretos. Não foi possível redefinir a senha.")
+            return
+    print("❌ Usuário não encontrado.")
+
 def login():
     """Realiza o login do usuário."""
     print_banner("Login")
@@ -149,6 +219,13 @@ def login():
     users_data = load_json(USER_DATA_FILE, {"users": []})
     for user in users_data["users"]:
         if user["username"] == username and checkpw(password.encode('utf-8'), user["password"].encode('utf-8')):
+            # Verificação extra para admin: pede senha secreta
+            if user["role"] == "admin":
+                admin_pass = input("Digite a senha secreta de administrador para acessar o painel admin: ")
+                if admin_pass != ADMIN_SECRET:
+                    print("❌ Senha de administrador incorreta! Acesso como usuário comum.")
+                    show_user_menu(username)
+                    return
             print(f"✅ Bem-vindo(a), {username}! Login realizado com sucesso.\n")
             show_policies()  # Exibe as políticas após o login
             if user["role"] == "admin":
@@ -164,43 +241,54 @@ def run_quiz(questions, quiz_name, username):
     start_time = time.time()
 
     for question in questions:
-        print("\n" + question["question"])
+        print()
+        try:
+            columns = os.get_terminal_size().columns
+        except OSError:
+            columns = 80
+        print(question["question"].center(columns))
         for option in question["options"]:
-            print(option)
+            print(option.center(columns))
         answer = input("Sua resposta: ").strip().upper()
         while answer not in ["A", "B", "C", "D"]:
-            print("❌ Opção inválida! Por favor, escolha entre A, B, C ou D.")
+            print("❌ Opção inválida! Por favor, escolha entre A, B, C ou D.".center(columns))
             answer = input("Sua resposta: ").strip().upper()
         if answer == question["correct"]:
-            print("✅ Resposta correta!")
+            print("✅ Resposta correta!".center(columns))
             correct_answers += 1
         else:
-            print(f"❌ Resposta incorreta! A resposta correta era: {question['correct']}")
+            print(f"❌ Resposta incorreta! A resposta correta era: {question['correct']}".center(columns))
 
     end_time = time.time()
     elapsed_time = end_time - start_time
 
-    print(f"\nVocê acertou {correct_answers} de {len(questions)} questões.")
-    print(f"Tempo total: {elapsed_time:.2f} segundos.")
+    print(f"\nVocê acertou {correct_answers} de {len(questions)} questões.".center(columns))
+    print(f"Tempo total: {elapsed_time:.2f} segundos.".center(columns))
+
+    # --- DEBUG: Mostra onde está salvando as estatísticas ---
+    print(f"[DEBUG] Salvando estatísticas em: {STATS_FILE}")
 
     stats = load_json(STATS_FILE, {})
-    if username not in stats:
-        stats[username] = {}
-    if quiz_name not in stats[username]:
-        stats[username][quiz_name] = {
+    username_key = username.strip()
+    if username_key not in stats:
+        stats[username_key] = {}
+    if quiz_name not in stats[username_key]:
+        stats[username_key][quiz_name] = {
             "total_time": 0,
             "attempts": 0,
             "correct_answers": 0,
             "average_time": 0
         }
 
-    stats[username][quiz_name]["total_time"] += elapsed_time
-    stats[username][quiz_name]["attempts"] += 1
-    stats[username][quiz_name]["correct_answers"] += correct_answers
-    stats[username][quiz_name]["average_time"] = stats[username][quiz_name]["total_time"] / stats[username][quiz_name]["attempts"]
+    stats[username_key][quiz_name]["total_time"] += elapsed_time
+    stats[username_key][quiz_name]["attempts"] += 1
+    stats[username_key][quiz_name]["correct_answers"] += correct_answers
+    stats[username_key][quiz_name]["average_time"] = (
+        stats[username_key][quiz_name]["total_time"] / stats[username_key][quiz_name]["attempts"]
+    )
     save_json(STATS_FILE, stats)
 
-    print(f"Tempo médio para este quiz: {stats[username][quiz_name]['average_time']:.2f} segundos.")
+    print(f"Tempo médio para este quiz: {stats[username_key][quiz_name]['average_time']:.2f} segundos.".center(columns))
 
 def logic_quiz(username):
     """Quiz de Pensamento Lógico Computacional."""
@@ -349,11 +437,15 @@ def cyber_quiz(username):
 def show_courses(username):
     """Exibe as opções de cursos disponíveis."""
     print_banner("Cursos Disponíveis")
-    print("1. Pensamento Lógico Computacional")
-    print("2. Segurança Digital e Cidadania Digital")
-    print("3. Programação em Python")
-    print("4. Fundamentos de Cibersegurança")
-    print("5. Voltar ao menu principal")
+    try:
+        columns = os.get_terminal_size().columns
+    except OSError:
+        columns = 80
+    print("1. Pensamento Lógico Computacional".center(columns))
+    print("2. Segurança Digital e Cidadania Digital".center(columns))
+    print("3. Programação em Python".center(columns))
+    print("4. Fundamentos de Cibersegurança".center(columns))
+    print("5. Voltar ao menu principal".center(columns))
     while True:
         choice = input("Escolha um curso entre 1, 2, 3, 4 ou digite 5 para voltar: ")
         if choice == "1":
@@ -365,10 +457,10 @@ def show_courses(username):
         elif choice == "4":
             cyber_quiz(username)
         elif choice == "5":
-            print("Voltando ao menu principal...\n")
+            print("Voltando ao menu principal...\n".center(columns))
             break
         else:
-            print("❌ Opção inválida! Tente novamente.")
+            print("❌ Opção inválida! Tente novamente.".center(columns))
 
 def calculate_statistics():
     """Calcula estatísticas de idade e localidades dos usuários."""
@@ -381,79 +473,102 @@ def calculate_statistics():
         return
 
     print_banner("Estatísticas de Idade dos Usuários")
-    print(f"Média: {mean(ages):.2f} anos")
-    print(f"Mediana: {median(ages):.2f} anos")
     try:
-        print(f"Moda: {mode(ages)} anos")
+        columns = os.get_terminal_size().columns
+    except OSError:
+        columns = 80
+    print(f"Média: {mean(ages):.2f} anos".center(columns))
+    print(f"Mediana: {median(ages):.2f} anos".center(columns))
+    try:
+        print(f"Moda: {mode(ages)} anos".center(columns))
     except StatisticsError:
-        print("Moda: Não há uma moda única (valores repetidos).")
+        print("Moda: Não há uma moda única (valores repetidos).".center(columns))
 
     print_banner("Levantamento de Localidades")
     for location, count in locations_data.items():
-        print(f"{location}: {count} usuário(s)")
+        print(f"{location}: {count} usuário(s)".center(columns))
 
 def show_user_menu(username):
     """Exibe o menu principal para usuários comuns."""
     while True:
         print_banner("Menu Principal")
-        print("1. Escolher um curso")
-        print("2. Ver estatísticas dos quizzes")
-        print("3. Sair")
+        try:
+            columns = os.get_terminal_size().columns
+        except OSError:
+            columns = 80
+        print("1. Escolher um curso".center(columns))
+        print("2. Ver estatísticas dos quizzes".center(columns))
+        print("3. Sair".center(columns))
         choice = input("Escolha uma opção: ")
         if choice == "1":
             show_courses(username)
         elif choice == "2":
             stats = load_json(STATS_FILE, {})
-            if username in stats:
-                print_banner(f"Estatísticas dos Quizzes para {username}")
-                for quiz, data in stats[username].items():
-                    print(f"{quiz}:")
-                    print(f"  - Tempo médio: {data['average_time']:.2f} segundos")
-                    print(f"  - Tentativas: {data['attempts']}")
-                    print(f"  - Respostas corretas: {data['correct_answers']}")
+            username_key = username.strip()
+            if username_key in stats and stats[username_key]:
+                print_banner(f"Estatísticas dos Quizzes para {username_key}")
+                for quiz, data in stats[username_key].items():
+                    print(f"{quiz}:".center(columns))
+                    print(f"  - Tempo médio: {data['average_time']:.2f} segundos".center(columns))
+                    print(f"  - Tentativas: {data['attempts']}".center(columns))
+                    print(f"  - Respostas corretas: {data['correct_answers']}".center(columns))
+                input("\nPressione Enter para voltar ao menu.")
             else:
-                print("\nNenhuma estatística disponível para este usuário.")
+                print("\nNenhuma estatística disponível para este usuário.".center(columns))
+                input("\nPressione Enter para voltar ao menu.")
         elif choice == "3":
-            print("Obrigado por usar a plataforma. Até logo!")
+            print("Obrigado por usar a plataforma. Até logo!".center(columns))
             break
         else:
-            print("❌ Opção inválida! Tente novamente.")
+            print("❌ Opção inválida! Tente novamente.".center(columns))
 
 def show_admin_menu(username):
     """Exibe o menu principal para administradores."""
     while True:
         print_banner("Menu Principal (Administrador)")
-        print("1. Escolher um curso")
-        print("2. Ver estatísticas avançadas")
-        print("3. Sair")
+        try:
+            columns = os.get_terminal_size().columns
+        except OSError:
+            columns = 80
+        print("1. Escolher um curso".center(columns))
+        print("2. Ver estatísticas avançadas".center(columns))
+        print("3. Sair".center(columns))
         choice = input("Escolha uma opção: ")
         if choice == "1":
             show_courses(username)
         elif choice == "2":
             calculate_statistics()
+            input("\nPressione Enter para voltar ao menu.")
         elif choice == "3":
-            print("Obrigado por usar a plataforma. Até logo!")
+            print("Obrigado por usar a plataforma. Até logo!".center(columns))
             break
         else:
-            print("❌ Opção inválida! Tente novamente.")
+            print("❌ Opção inválida! Tente novamente.".center(columns))
 
 def main():
     """Função principal."""
     while True:
         print_banner("Bem-vindo à União Digital")
-        print("1. Registrar-se")
-        print("2. Login")
-        print("3. Sair")
+        try:
+            columns = os.get_terminal_size().columns
+        except OSError:
+            columns = 80
+        print("1. Registrar-se".center(columns))
+        print("2. Login".center(columns))
+        print("3. Recuperar senha".center(columns))
+        print("4. Sair".center(columns))
         choice = input("Escolha uma opção: ")
         if choice == "1":
             register()
         elif choice == "2":
             login()
         elif choice == "3":
-            print("Obrigado por usar a plataforma. Até logo!")
+            reset_password()
+        elif choice == "4":
+            print("Obrigado por usar a plataforma. Até logo!".center(columns))
             break
         else:
-            print("❌ Opção inválida! Tente novamente.")
+            print("❌ Opção inválida! Tente novamente.".center(columns))
 
 if __name__ == "__main__":
     main()
