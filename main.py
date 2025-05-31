@@ -51,7 +51,7 @@ def ensure_directory_exists(file_path):
 
 def load_json(file_path, default_data):
     """Carrega dados de um arquivo JSON ou cria com dados padrão."""
-    print(f"[DEBUG] Carregando: {file_path}")  # Debug para ver onde está lendo
+    #print(f"[DEBUG] Carregando: {file_path}")  # Debug para ver onde está lendo
     ensure_directory_exists(file_path)
     if not file_path.exists():
         with file_path.open('w') as file:
@@ -64,7 +64,7 @@ def load_json(file_path, default_data):
 
 def save_json(file_path, data):
     """Salva dados em um arquivo JSON."""
-    print(f"[DEBUG] Salvando: {file_path}")  # Debug para ver onde está salvando
+    #print(f"[DEBUG] Salvando: {file_path}")  # Debug para ver onde está salvando
     with file_path.open('w') as file:
         json.dump(data, file, indent=4)
 
@@ -266,7 +266,7 @@ def run_quiz(questions, quiz_name, username):
     print(f"Tempo total: {elapsed_time:.2f} segundos.".center(columns))
 
     # --- DEBUG: Mostra onde está salvando as estatísticas ---
-    print(f"[DEBUG] Salvando estatísticas em: {STATS_FILE}")
+    #print(f"[DEBUG] Salvando estatísticas em: {STATS_FILE}")
 
     stats = load_json(STATS_FILE, {})
     username_key = username.strip()
