@@ -462,31 +462,88 @@ def show_courses(username):
         else:
             print("❌ Opção inválida! Tente novamente.".center(columns))
 
-def calculate_statistics():
-    """Calcula estatísticas de idade e localidades dos usuários."""
-    users_data = load_json(USER_DATA_FILE, {"users": []})
-    ages = [user["age"] for user in users_data["users"] if user["role"] == "user"]
-    locations_data = load_json(LOCATIONS_FILE, {})
-
-    if not ages:
-        print("\nNenhum dado de idade disponível para cálculo.")
-        return
-
-    print_banner("Estatísticas de Idade dos Usuários")
+def show_all_quiz_statistics():
+    """Exibe estatísticas de quizzes de todos os usuários para o administrador."""
+    stats = load_json(STATS_FILE, {})
     try:
         columns = os.get_terminal_size().columns
     except OSError:
         columns = 80
-    print(f"Média: {mean(ages):.2f} anos".center(columns))
-    print(f"Mediana: {median(ages):.2f} anos".center(columns))
-    try:
-        print(f"Moda: {mode(ages)} anos".center(columns))
-    except StatisticsError:
-        print("Moda: Não há uma moda única (valores repetidos).".center(columns))
+    print_banner("Estatísticas dos Quizzes (Todos os Usuários)")
+    if not stats:
+        print("Nenhuma estatística de quiz disponível.".center(columns))
+    else:
+        for user, quizzes in stats.items():
+            print(f"Usuário: {user}".center(columns))
+            for quiz, data in quizzes.items():
+                print(f"  {quiz}:".center(columns))
+                print(f"    - Tempo médio: {data['average_time']:.2f} segundos".center(columns))
+                print(f"    - Tentativas: {data['attempts']}".center(columns))
+                print(f"    - Respostas corretas: {data['correct_answers']}".center(columns))
+            print("-" * 40)
+    input("\nPressione Enter para voltar ao menu.")
 
+def show_all_users():
+    """Exibe todos os usuários cadastrados (exceto senhas) para o administrador."""
+    users_data = load_json(USER_DATA_FILE, {"users": []})
+    try:
+        columns = os.get_terminal_size().columns
+    except OSError:
+        columns = 80
+    print_banner("Usuários Cadastrados")
+    if not users_data["users"]:
+        print("Nenhum usuário cadastrado.".center(columns))
+    else:
+        for user in users_data["users"]:
+            print(f"Usuário: {user['username']}".center(columns))
+            print(f"  Idade: {user['age']}".center(columns))
+            print(f"  Localidade: {user['location']}".center(columns))
+            print(f"  Perfil: {user['role']}".center(columns))
+            print("-" * 40)
+    input("\nPressione Enter para voltar ao menu.")
+
+def show_locations():
+    """Exibe levantamento de localidades dos usuários."""
+    locations_data = load_json(LOCATIONS_FILE, {})
+    try:
+        columns = os.get_terminal_size().columns
+    except OSError:
+        columns = 80
     print_banner("Levantamento de Localidades")
-    for location, count in locations_data.items():
-        print(f"{location}: {count} usuário(s)".center(columns))
+    if not locations_data:
+        print("Nenhuma localidade cadastrada.".center(columns))
+    else:
+        for location, count in locations_data.items():
+            print(f"{location}: {count} usuário(s)".center(columns))
+    input("\nPressione Enter para voltar ao menu.")
+
+def show_admin_menu(username):
+    """Exibe o menu principal para administradores."""
+    while True:
+        print_banner("Menu Principal (Administrador)")
+        try:
+            columns = os.get_terminal_size().columns
+        except OSError:
+            columns = 80
+        print("1. Escolher um curso".center(columns))
+        print("2. Estatísticas dos quizzes (todos os usuários)".center(columns))
+        print("3. Estatísticas de usuários cadastrados".center(columns))
+        print("4. Levantamento de localidades".center(columns))
+        print("5. Sair".center(columns))
+        choice = input("Escolha uma opção: ")
+        if choice == "1":
+            show_courses(username)
+        elif choice == "2":
+            show_all_quiz_statistics()
+        elif choice == "3":
+            show_all_users()
+        elif choice == "4":
+            show_locations()
+        elif choice == "5":
+            print("Obrigado por usar a plataforma. Até logo!".center(columns))
+            break
+        else:
+            print("❌ Opção inválida! Tente novamente.".center(columns))
 
 def show_user_menu(username):
     """Exibe o menu principal para usuários comuns."""
@@ -516,29 +573,6 @@ def show_user_menu(username):
             else:
                 print("\nNenhuma estatística disponível para este usuário.".center(columns))
                 input("\nPressione Enter para voltar ao menu.")
-        elif choice == "3":
-            print("Obrigado por usar a plataforma. Até logo!".center(columns))
-            break
-        else:
-            print("❌ Opção inválida! Tente novamente.".center(columns))
-
-def show_admin_menu(username):
-    """Exibe o menu principal para administradores."""
-    while True:
-        print_banner("Menu Principal (Administrador)")
-        try:
-            columns = os.get_terminal_size().columns
-        except OSError:
-            columns = 80
-        print("1. Escolher um curso".center(columns))
-        print("2. Ver estatísticas avançadas".center(columns))
-        print("3. Sair".center(columns))
-        choice = input("Escolha uma opção: ")
-        if choice == "1":
-            show_courses(username)
-        elif choice == "2":
-            calculate_statistics()
-            input("\nPressione Enter para voltar ao menu.")
         elif choice == "3":
             print("Obrigado por usar a plataforma. Até logo!".center(columns))
             break
